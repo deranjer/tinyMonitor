@@ -1,0 +1,25 @@
+[serverConfig]
+
+    ServerPort = "8000" #Required to input as string
+    ServerAddr = "192.168.1.7" #Put in the IP address you want to bind to as string
+    LogLevel = "Debug" # Options = Debug, Info, Warn, Error, Fatal, Panic
+    LogOutput = "file" #Options = file, stdout #file will print it to logs/server.log
+
+
+    #Relative or absolute path accepted, the server will convert any relative path to an absolute path.
+    DefaultMoveFolder = 'downloads' #default path that a finished torrent is symlinked to after completion. Torrents added via RSS will default here
+    TorrentWatchFolder = 'torrentUpload' #folder path that is watched for .torrent files and adds them automatically every 5 minutes
+
+[logging]
+
+    Level = "debug" #debug, info, warn, error, fatal
+    Encoding = "console" #JSON, console
+    OutputPaths = ["stdout", "console"]
+    ErrorOutPutPaths = ["stderr"]
+
+   
+[goTorrentWebUI]
+    #Basic goTorrentWebUI authentication (not terribly secure, implemented in JS, password is hashed to SHA256, not salted, basically don't depend on this if you require very good security)
+    WebUIAuth = false # bool, if false no authentication is required for the webUI
+    WebUIUser = "admin"
+    WebUIPassword = "Password1"
