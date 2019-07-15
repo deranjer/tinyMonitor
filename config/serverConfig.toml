@@ -18,7 +18,7 @@
     ErrorOutPutPaths = ["stderr"]
 
    
-[goTorrentWebUI]
+[tinyMonitorWebUI]
     #Basic goTorrentWebUI authentication (not terribly secure, implemented in JS, password is hashed to SHA256, not salted, basically don't depend on this if you require very good security)
     WebUIAuth = false # bool, if false no authentication is required for the webUI
     WebUIUser = "admin"

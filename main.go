@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/deranjer/tinyMonitor/config"
 
@@ -26,6 +27,10 @@ var (
 	Logger zerolog.Logger
 )
 
+func date() string {
+	return time.Now().Format(time.ANSIC)
+}
+
 func main() {
 	serverSettings, Logger := config.SetupServer() //setup logging and all server settings
 	Logger.Info().Msg("Server and Logger configuration complete")
@@ -38,6 +43,14 @@ func main() {
 		Logger.Fatal().Err(err).Str("Connection String", serverSettings.ListenAddr).Msg("Failed to open listen socket")
 	}
 	Logger.Info().Str("Address", serverSettings.ListenAddr).Msg("Listen socket opened with no errors")
-	fmt.Println("Done!")
+	for {
+		// Could also use sock.RecvMsg to get header
+		d := date()
+		fmt.Printf("SERVER: PUBLISHING DATE %s\n", d)
+		if err = sock.Send([]byte(d)); err != nil {
+			die("Failed publishing: %s", err.Error())
+		}
+		time.Sleep(time.Second)
+	}
 
 }
