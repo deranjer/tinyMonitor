@@ -49,7 +49,7 @@ func MessageDecode(msg []byte) {
 }
 
 //MessageEncode will encode and test the message (and maybe send it?)
-func MessageEncode(msg BaseMessage) *bytes.Buffer {
+func MessageEncode(msg *BaseMessage) *bytes.Buffer {
 	b := new(bytes.Buffer)
 	gob.NewEncoder(b).Encode(&msg)
 	return b
