@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/asdine/storm"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
@@ -11,6 +12,8 @@ import (
 var (
 	//Logger is the global zap logger
 	Logger zerolog.Logger
+	//StormDB is the global bolt database variable
+	StormDB *storm.DB
 )
 
 //ServerConfig contains all of the server settings defined in the TOML file
@@ -19,7 +22,7 @@ type ServerConfig struct {
 }
 
 //SetupServer does the initial configuration
-func SetupServer() (ServerConfig, zerolog.Logger) {
+func SetupServer() (ServerConfig, zerolog.Logger, *storm.DB) {
 	viper.AddConfigPath("config/")
 	viper.AddConfigPath(".")
 	viper.SetConfigName("serverConfig")
@@ -28,13 +31,14 @@ func SetupServer() (ServerConfig, zerolog.Logger) {
 		panic(fmt.Errorf("fatal error config file: %s \n", err))
 	}
 	setupLogging()
+	StormDB = setupDatabase()
 	Logger.Info().Msg("Logger is setup")
 	serverSettings := ServerConfig{}
 	serverPort := viper.GetString("serverConfig.ServerPort")
 	serverAddr := viper.GetString("serverConfig.ServerAddr")
 	serverSettings.ListenAddr = "tcp://" + serverAddr + ":" + serverPort //TODO in the future support more than just TCP
 
-	return serverSettings, Logger
+	return serverSettings, Logger, StormDB
 }
 
 func setupLogging() {
@@ -58,6 +62,14 @@ func setupLogging() {
 	//zapConfig.Encoding = viper.GetString("logging.Encoding")
 	//zapConfig.OutputPaths = viper.GetStringSlice("logging.OutputPaths")
 	//zapConfig.ErrorOutputPaths = viper.GetStringSlice("logging.ErrorOutputPaths")
-	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	logger := zerolog.New(os.Stdout).With().Timestamp().Logger() //TODO let user specifiy output options
 	Logger = logger
+}
+
+func setupDatabase() (db *storm.DB) {
+	db, err := storm.Open("tinyMonitorDB.db")
+	if err != nil {
+		Logger.Fatal().Err(err).Msg("Unable to create/open database!")
+	}
+	return db
 }

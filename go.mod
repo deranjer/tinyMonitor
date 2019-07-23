@@ -3,6 +3,7 @@ module github.com/deranjer/tinyMonitor
 go 1.12
 
 require (
+	github.com/asdine/storm v2.1.2+incompatible
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/rs/zerolog v1.14.3

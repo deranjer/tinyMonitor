@@ -1,12 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/deranjer/tinyMonitor/config"
+	"github.com/deranjer/tinyMonitor/messaging"
 
+	"github.com/asdine/storm"
 	"github.com/rs/zerolog"
 	"nanomsg.org/go/mangos/v2"
 	"nanomsg.org/go/mangos/v2/protocol/pair"
@@ -15,24 +16,22 @@ import (
 	_ "nanomsg.org/go/mangos/v2/transport/tcp" //TODO change to /all to register all transports
 )
 
-func die(format string, v ...interface{}) {
-	fmt.Fprintln(os.Stderr, fmt.Sprintf(format, v...))
-	os.Exit(1)
-}
-
 var (
 	err  error
 	msg  []byte
 	sock mangos.Socket
 	//Logger is the global Logger variable
 	Logger zerolog.Logger
+	//StormDB is the global bolt database variable
+	StormDB        *storm.DB
+	serverSettings config.ServerConfig
 )
 
-func date() string {
-	return time.Now().Format(time.ANSIC)
+func initializeDatabase() {
+
 }
 
-func pairSocket(serverSettings config.ServerConfig, Logger zerolog.Logger, channel chan string) {
+func pairSocket(serverSettings config.ServerConfig, channel chan string) {
 	sock, err = pair.NewSocket()
 	if err != nil {
 		Logger.Fatal().Err(err).Msg("Can't get new pub socket")
@@ -43,12 +42,11 @@ func pairSocket(serverSettings config.ServerConfig, Logger zerolog.Logger, chann
 	}
 	Logger.Info().Str("Address", serverSettings.ListenAddr).Msg("Listen socket created with no errors")
 	for {
-		//sock.SetOption(mangos.OptionRecvDeadline, 100*time.Millisecond)
 		msg, err = sock.Recv()
 		if err != nil {
 			Logger.Error().Err(err).Msg("Server failed to receive pair message from agent")
 		} else {
-			Logger.Debug().Str("Message Body", string(msg)).Msg("Message Received from Agent")
+			messaging.MessageDecode(msg) //Send the message over to the messaging package for decoding and handling
 			sock.Send([]byte("Server sending response"))
 		}
 
@@ -56,10 +54,14 @@ func pairSocket(serverSettings config.ServerConfig, Logger zerolog.Logger, chann
 }
 
 func main() {
-	serverSettings, Logger := config.SetupServer() //setup logging and all server settings
+	serverSettings, Logger, StormDB = config.SetupServer() //receiving the server settings, logger and bbolt database from the config package
+	defer StormDB.Close()                                  //Will close the db if the main function exits
+	initializeDatabase()
+	messaging.Logger = Logger   //injecting the Logger into the messaging package
+	messaging.StormDB = StormDB //injecting the Database into the messaging package
 	Logger.Info().Msg("Server and Logger configuration complete")
 	agentListenCh := make(chan string)
-	go pairSocket(serverSettings, Logger, agentListenCh) //setting up a permanent pair socket to listen for messages from agents
+	go pairSocket(serverSettings, agentListenCh) //setting up a permanent pair socket to listen for messages from agents
 	for {
 		select {
 		case <-agentListenCh:
